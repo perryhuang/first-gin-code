@@ -1,0 +1,19 @@
+basePath: /
+consumes:
+- application/json
+host: localhost:8080
+info:
+  contact:
+    email: mohamed@labouardy.com
+    name: Mohamed Labouardy
+    url: https://labouardy.com
+  description: This is a sample recipes API. You can find out more about the API at
+    https://github.com/PacktPublishing/Building-Distributed-Applications-in-Gin.
+  title: Recipes API
+  version: 1.0.0
+paths: {}
+produces:
+- application/json
+schemes:
+- http
+swagger: "2.0"
