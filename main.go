@@ -31,6 +31,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"perryhuang.com/first-gin/handlers"
 )
 
 // swagger:parameters recipes newRecipe
@@ -50,14 +51,10 @@ var client *mongo.Client
 
 //pryd check >
 var collection *mongo.Collection
+var recipesHandler *handlers.RecipesHandler
 
 //pryd check <
 func init() {
-	/*
-		recipes = make([]Recipe, 0)
-		file, _ := ioutil.ReadFile("recipes.json")
-		_ = json.Unmarshal([]byte(file), &recipes)
-	*/
 	ctx = context.Background()
 	client, err = mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
@@ -67,18 +64,7 @@ func init() {
 
 	collection = client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
 
-	/*
-		var listOfRecipes []interface{}
-		for _, recipe := range recipes {
-			listOfRecipes = append(listOfRecipes, recipe)
-		}
-		collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
-		insertManyResult, err := collection.InsertMany(ctx, listOfRecipes)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println("Inserted recipes:", len(insertManyResult.InsertedIDs))
-	*/
+	recipesHandler = handlers.NewRecipesHandler(ctx, collection)
 }
 
 // swagger:operation POST /recipes recipes newRecipe
@@ -255,10 +241,10 @@ func SearchRecipesHandler(c *gin.Context) {
 
 func main() {
 	router := gin.Default()
-	router.POST("/recipes", NewRecipeHandler)
-	router.GET("/recipes", ListRecipesHandler)
-	router.GET("/recipes/search", SearchRecipesHandler)
-	router.PUT("/recipes/:id", UpdateRecipeHandler)
-	router.DELETE("/recipes/:id", DeleteRecipeHandler)
+	router.POST("/recipes", recipesHandler.NewRecipeHandler)
+	router.GET("/recipes", recipesHandler.ListRecipesHandler)
+	//	router.GET("/recipes/search", SearchRecipesHandler)
+	router.PUT("/recipes/:id", recipesHandler.UpdateRecipesHandler)
+	//	router.DELETE("/recipes/:id", DeleteRecipeHandler)
 	router.Run()
 }
