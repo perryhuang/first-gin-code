@@ -77,7 +77,7 @@ func init() {
 }
 
 // swagger:operation POST /recipes recipes newRecipe
-// Create a new recipe
+// Create a new recipe.
 // ---
 // produces:
 // - application/json
