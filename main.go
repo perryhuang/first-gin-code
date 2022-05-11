@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -62,13 +63,21 @@ func init() {
 	}
 	log.Println("Connected to MongoDB")
 
-	collection = client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
+	status := redisClient.Ping()
+	fmt.Println(status)
 
-	recipesHandler = handlers.NewRecipesHandler(ctx, collection)
+	collection = client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
+
 }
 
 // swagger:operation POST /recipes recipes newRecipe
-// Create a new recipe
+// Create a new recipe.
 // ---
 // produces:
 // - application/json
