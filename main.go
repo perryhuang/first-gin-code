@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/sessions"
+	redisStore "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"go.mongodb.org/mongo-driver/bson"
@@ -53,6 +55,7 @@ var client *mongo.Client
 //pryd check >
 var collection *mongo.Collection
 var recipesHandler *handlers.RecipesHandler
+var authHandler *handlers.AuthHandler
 
 //pryd check <
 func init() {
@@ -72,8 +75,9 @@ func init() {
 	fmt.Println(status)
 
 	collection = client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	collectionUsers := client.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
 	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
-
+	authHandler = handlers.NewAuthHandler(ctx, collectionUsers)
 }
 
 // swagger:operation POST /recipes recipes newRecipe
@@ -248,12 +252,37 @@ func SearchRecipesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, listOfRecipes)
 }
 
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetHeader("X-API-KEY") != os.Getenv("X_API_KEY") {
+			c.AbortWithStatus(401)
+		}
+	}
+}
+
 func main() {
 	router := gin.Default()
-	router.POST("/recipes", recipesHandler.NewRecipeHandler)
+
+	store, _ := redisStore.NewStore(10, "tcp", "localhost:6379", "", []byte("secret"))
+	router.Use(sessions.Sessions("recipes_api", store))
+
 	router.GET("/recipes", recipesHandler.ListRecipesHandler)
+	router.POST("/signin", authHandler.SignInHandler)
+	router.POST("/refresh", authHandler.RefreshHandler)
+	router.POST("/signout", authHandler.SignOutHandler)
+
+	authorized := router.Group("/")
+
+	authorized.Use(authHandler.AuthMiddleware())
+	{
+		authorized.POST("/recipes", recipesHandler.NewRecipeHandler)
+		authorized.PUT("/recipes/:id", recipesHandler.UpdateRecipesHandler)
+		authorized.DELETE("/recipes/:id", recipesHandler.DeleteRecipesHandler)
+	}
+
+	// router.POST("/recipes", recipesHandler.NewRecipeHandler)
 	//	router.GET("/recipes/search", SearchRecipesHandler)
-	router.PUT("/recipes/:id", recipesHandler.UpdateRecipesHandler)
+	// router.PUT("/recipes/:id", recipesHandler.UpdateRecipesHandler)
 	//	router.DELETE("/recipes/:id", DeleteRecipeHandler)
 	router.Run()
 }

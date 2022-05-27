@@ -1,2 +1,4 @@
 How to execute and run the database:
-MONGO_URI="mongodb://admin:password@localhost:27017/test?authSource=admin" MONGO_DATABASE=demo go run main.go
+JWT_SECRET=aAbBcCdDeEfFgGhH MONGO_URI="mongodb://admin:password@localhost:27017/test?authSource=admin" MONGO_DATABASE=demo go run main.go
+
+with X_API_KEY=aAbBcCdDeEfFgGhH

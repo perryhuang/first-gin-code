@@ -117,3 +117,20 @@ func (handler *RecipesHandler) ListRecipesHandler(c *gin.Context) {
 	}
 
 }
+
+func (handler *RecipesHandler) DeleteRecipesHandler(c *gin.Context) {
+
+	id := c.Param("id")
+	objectId, _ := primitive.ObjectIDFromHex(id)
+	_, err := handler.collection.DeleteOne(handler.ctx, bson.M{
+		"_id": objectId,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Recipe has been deleted"})
+
+	log.Println("Remove data from Redis")
+	handler.redisClient.Del("recipes")
+}
